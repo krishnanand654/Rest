@@ -9,9 +9,13 @@ from django.shortcuts import render
 from rest_framework.parsers import JSONParser, MultiPartParser
 from .models import EmployeeModel, LeaveApplication
 from rest_framework.permissions import IsAuthenticated
-from .serializers import EmployeeCreateSerializer, EmployeeListSerializer, EmployeeDetailSerializer, LeaveDetailSerializer, LeaveCreateSerializer
+from .serializers import EmployeeCreateSerializer, EmployeeListSerializer, EmployeeDetailSerializer, LeaveListSerializer, LeaveApproveSerializer, UserSerializer
+
 from rest_framework.views import APIView
+from django.shortcuts import get_object_or_404
+
 from django.contrib.auth import authenticate, login
+from django.contrib.auth.models import User
 
 
 class IsAdminUser(permissions.BasePermission):
@@ -23,7 +27,16 @@ class EmployeeCreate(generics.CreateAPIView, APIView):  # create employee
     queryset = EmployeeModel.objects.all()
     serializer_class = EmployeeCreateSerializer
 
-    permission_classes = [IsAdminUser, IsAuthenticated]
+    # def perform_create(self, serializer):
+    #     validated_data = serializer.validated_data
+    #     username = validated_data.get('Email')
+    #     password = validated_data.get('Password')
+    #     user = User.objects.create_user(username=username, password=password)
+    #     validated_data['user'] = user
+    #     employee = serializer.save(**validated_data)
+    #     return employee
+
+    # permission_classes = [IsAdminUser, IsAuthenticated]
 
     # permission_classes = [IsAuthenticated]
     # parser_classes = (MultiPartParser, JSONParser)
@@ -39,7 +52,7 @@ class EmployeeDetail(generics.RetrieveAPIView):
     lookup_field = 'pk'  # details of particular employee
     queryset = EmployeeModel.objects.all()
     serializer_class = EmployeeDetailSerializer
-    permission_classes = [IsAdminUser, IsAuthenticated]
+    # permission_classes = [IsAdminUser, IsAuthenticated]
 
 
 class EmployeeUpdateDetail(generics.RetrieveUpdateAPIView):
@@ -56,23 +69,64 @@ class EmployeeDeleteDetail(generics.RetrieveDestroyAPIView):
     permission_classes = [IsAdminUser, IsAuthenticated]
 
 
-class LeaveDetail(generics.RetrieveAPIView):
-    lookup_field = 'pk'  # details of particular employee
-    print(EmployeeModel.objects.values('Email'))
-    queryset = EmployeeModel.objects.values('Email')
-    serializer_class = LeaveDetailSerializer
-
-
-class LeaveCreate(generics.ListCreateAPIView, APIView):
-    lookup_field = 'pk'  # create employee
-    queryset = EmployeeModel.objects.values('Email')
+class LeaveList(generics.ListAPIView):  # list  all employee
     queryset = LeaveApplication.objects.all()
+    serializer_class = LeaveListSerializer
+    # permission_classes = [IsAdminUser, IsAuthenticated]
 
 
-class LeaveView(generics.ListCreateAPIView):
-    lookup_field = 'pk'
-    queryset = LeaveApplication.objects.values('user')
-    serializer_class = LeaveCreateSerializer
+class LeaveApprove(generics.RetrieveUpdateAPIView):  # list  all employee
+
+    parser_classes = (MultiPartParser, JSONParser)
+    lookup_field = 'emp_id'
+    queryset = LeaveApplication.objects.all()
+    serializer_class = LeaveApproveSerializer
+
+    def get_object(self):
+        id = self.kwargs.get(self.lookup_field)
+        l_id = self.kwargs.get('leaveid')
+        if l_id is not None:
+            return get_object_or_404(self.queryset, emp_id=id, id=l_id)
+        else:
+            return get_object_or_404(self.queryset, emp_id=id)
+
+        # return get_object_or_404(self.queryset, emp_id=id)
+
+
+class ApprovedLeavesList(generics.ListAPIView):
+    queryset = LeaveApplication.objects.all()
+    serializer_class = LeaveListSerializer
+    # permission_classes = [IsAdminUser, IsAuthenticated]
+
+    def get_queryset(self):
+        status = self.kwargs.get('status')
+        if status == 'approved':
+            return self.queryset.filter(status='approved')
+        elif status == 'pending':
+            return self.queryset.filter(status='pending')
+
+
+class SortedEmployeeView(generics.ListAPIView):
+    serializer_class = EmployeeListSerializer
+
+    def get_queryset(self):
+        sort = self.kwargs.get('sort')
+        if sort == 'asc':
+            return EmployeeModel.objects.all().order_by('Employee_Id')
+        elif sort == 'desc':
+            return EmployeeModel.objects.all().order_by('-Employee_Id')
+        else:
+            queryset = EmployeeModel.objects.all()
+        return queryset
+
+
+class SearchEmployeeView(generics.ListAPIView):
+    serializer_class = EmployeeListSerializer
+
+    def get_queryset(self):
+        emp_id = self.kwargs['emp_id']
+        return EmployeeModel.objects.filter(Employee_Id=emp_id)
+
 
 # class LoginView(generics.CreateAPIView):
 #     serializer_class = UserSerializer

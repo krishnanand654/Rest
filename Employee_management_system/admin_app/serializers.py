@@ -12,6 +12,16 @@ class EmployeeCreateSerializer(serializers.ModelSerializer):
         fields = ('Employee_Name', 'Contact_Number', 'Emergency_Contact_Number', 'Address', 'Postion', 'DOB', 'Martial_status', 'Blood_Group', 'Job_Title',
                   'work_Location', 'Reporting_to', 'Linked_In', 'Profile_Picture', 'Email', 'Password',)
 
+    # def perform_create(self, validated_data):
+    #     employee = EmployeeModel.objects.create(**validated_data)
+    #     username = validated_data['Email']
+    #     password = validated_data['Password']
+    #     user = User.objects.create_user(
+    #         username=username, password=password)
+    #     employee.user = user
+    #     employee.save()
+    #     return employee
+
     # def save(self):
     #     emp = User(
     #         email=self.validated_data['Email'], username=self.validated_data['Email'],)
@@ -37,13 +47,36 @@ class EmployeeDetailSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
-class LeaveDetailSerializer(serializers.Serializer):
-    Email = serializers.EmailField()
-
-
-class LeaveCreateSerializer(serializers.ModelSerializer):
+class LeaveListSerializer(serializers.ModelSerializer):
     lookup_field = 'pk'
 
     class Meta:
         model = LeaveApplication
-        fields = ('user', 'first_Day')
+
+        fields = ('id', 'user', 'emp_name', 'first_Day', 'last_Day',
+                  'apply_date', 'nature_of_leave', 'status')
+
+
+class LeaveApproveSerializer(serializers.ModelSerializer):
+    lookup_field = 'pk'
+
+    class Meta:
+        model = LeaveApplication
+
+        fields = ('first_Day', 'last_Day',
+                  'apply_date', 'nature_of_leave', 'status')
+
+
+class UserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['username', 'password']
+        extra_kwargs = {'password': {'write_only': True}}
+
+    def create(self, validated_data):
+        user = User(
+            username=validated_data['username']
+        )
+        user.set_password(validated_data['password'])
+        user.save()
+        return user

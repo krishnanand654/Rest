@@ -4,6 +4,7 @@ from django.contrib.auth.models import User
 
 
 class EmployeeModel(models.Model):
+
     Employee_Id = models.AutoField(primary_key=True)
     Employee_Name = models.CharField(max_length=50, null=False)
     Contact_Number = models.IntegerField()
@@ -30,13 +31,20 @@ class EmployeeModel(models.Model):
 
 
 class LeaveApplication(models.Model):
+    STATUS_CHOICES = (
+        ('pending', 'Pending'),
+        ('approved', 'Approved'),
+        ('rejected', 'Rejected'),
+    )
     user = models.ForeignKey(EmployeeModel, on_delete=models.CASCADE)
+    emp_id = models.CharField(max_length=100)
+    emp_name = models.CharField(max_length=100)
     apply_date = models.DateField(
-        auto_now=False, auto_now_add=True, editable=False)
+        auto_now=False, auto_now_add=True, editable=True)
     nature_of_leave = models.CharField(max_length=100)
     first_Day = models.DateField()
     last_Day = models.DateField()
-    number_Of_Days = models.IntegerField()
+    # number_Of_Days = models.IntegerField()
     # pending,approved,rejected,cancelled
-    status = models.CharField(max_length=12, default='pending')
-    is_approved = models.BooleanField(default=False)
+    status = models.CharField(choices=STATUS_CHOICES,
+                              max_length=10, default='pending')
