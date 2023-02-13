@@ -1,25 +1,112 @@
+from rest_framework.authentication import TokenAuthentication
 from django.shortcuts import render
+from admin_app.models import EmployeeModel, LeaveApplication
+from rest_framework.views import APIView
+from rest_framework.parsers import JSONParser, MultiPartParser
+from rest_framework.permissions import IsAuthenticated
+
+from .serializers import LeaveApplicationSerializer, UserSerializer
+
 
 # Create your views here.
 
 from rest_framework import generics
 from rest_framework.response import Response
-from rest_framework.permissions import AllowAny
+
+from django.shortcuts import get_object_or_404
+
+
+from rest_framework import generics, permissions
+from rest_framework.response import Response
+from rest_framework.authtoken.models import Token
 from django.contrib.auth import authenticate
-from .serializers import EmployeeSerializer
+
+# create leave
 
 
-class EmployeeLoginAPIView(generics.GenericAPIView):
-    serializer_class = EmployeeSerializer
-    permission_classes = [AllowAny]
+class LeaveView(APIView):
+    parser_classes = [MultiPartParser]
+    serializer_class = LeaveApplicationSerializer
 
-    def post(self, request, *args, **kwargs):
-        email = request.data.get("Email")
-        password = request.data.get("Password")
-        print(email)
-        print(password)
-        user = authenticate(request, Email=email, Password=password)
-        if user:
-            return Response({"message": "Login successful"})
+    def post(self, request, user_id):
+
+        employee = EmployeeModel.objects.get(Employee_Id=user_id)
+
+        emp_id = employee.Employee_Id
+        emp_name = employee.Employee_Name
+        leave = LeaveApplication.objects.create(
+
+            user=employee,
+            emp_id=emp_id,
+            emp_name=emp_name,
+
+            apply_date=request.data.get('apply_date'),
+            nature_of_leave=request.data.get('nature_of_leave'),
+            first_Day=request.data.get('first_Day'),
+            last_Day=request.data.get('last_Day'),
+            # number_Of_Days=request.data.get('number_Of_Days'),
+            # pending,approved,rejected,cancelled
+
+        )
+        return Response({'status': 'Leave request created'})
+
+
+# class MyLeaveView(generics.RetrieveAPIView):
+#     authentication_classes = (TokenAuthentication, )
+#     serializer_class = LeaveApplicationSerializer
+
+#     def get_object(self):
+#         id = self.kwargs['id']
+#         return LeaveApplication.objects.filter(emp_id=id)
+
+
+# show leave
+class LeaveDetailList(generics.ListAPIView):
+    permission_classes = (IsAuthenticated,)
+    # authentication_classes = (EmployeeAuthentication,)
+    lookup_field = 'emp_id'  # details of particular employee
+    queryset = LeaveApplication.objects.all()
+    serializer_class = LeaveApplicationSerializer
+
+    def get(self, request, *args, **kwargs):
+        id = self.kwargs.get(self.lookup_field)
+        leave_data = self.queryset.filter(emp_id=id)
+        serializer = LeaveApplicationSerializer(leave_data, many=True)
+        return Response(serializer.data)
+
+
+# class LeaveAppSort(generics.ListAPIView):
+#     serializer_class = LeaveApplicationSerializer
+
+#     def get_queryset(self):
+#         sort = self.request.query_params.get('sort', 'asc')
+#         if sort == 'asc':
+#             return LeaveApplication.objects.all().order_by('apply_date')
+#         else:
+#             return LeaveApplication.objects.all().order_by('-apply_date')
+
+
+class SortedLeavesView(generics.ListAPIView):
+    serializer_class = LeaveApplicationSerializer
+
+    def get_queryset(self):
+        emp_id = self.kwargs.get('emp_id')
+        sort = self.kwargs.get('sort')
+        if sort == 'asc':
+            queryset = LeaveApplication.objects.filter(
+                emp_id=emp_id).order_by('first_Day')
+        elif sort == 'desc':
+            queryset = LeaveApplication.objects.filter(
+                emp_id=emp_id).order_by('-first_Day')
         else:
-            return Response({"message": "Invalid credentials"})
+            queryset = LeaveApplication.objects.filter(emp_id=emp_id)
+        return queryset
+
+
+class SearchLeaveView(generics.ListAPIView):
+    serializer_class = LeaveApplicationSerializer
+
+    def get_queryset(self):
+        emp_id = self.kwargs['emp_id']
+        first_Day = self.kwargs['first_Day']
+        return LeaveApplication.objects.filter(emp_id=emp_id, first_Day=first_Day)
