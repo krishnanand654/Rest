@@ -12,16 +12,17 @@ class EmployeeCreateSerializer(serializers.ModelSerializer):
         fields = ('Employee_Name', 'Contact_Number', 'Emergency_Contact_Number', 'Address', 'Postion', 'DOB', 'Martial_status', 'Blood_Group', 'Job_Title',
                   'work_Location', 'Reporting_to', 'Linked_In', 'Profile_Picture', 'Email', 'Password',)
 
-    # def perform_create(self, validated_data):
-    #     employee = EmployeeModel.objects.create(**validated_data)
-    #     username = validated_data['Email']
-    #     password = validated_data['Password']
-    #     user = User.objects.create_user(
-    #         username=username, password=password)
-    #     employee.user = user
-    #     employee.save()
-    #     return employee
+    def create(self, validated_data):
+        email = validated_data.get('Email')
+        password = validated_data.get('Password')
+        try:
+            user = User.objects.get(email=email)
+        except User.DoesNotExist:
+            user = User.objects.create_user(email, email, password)
 
+        validated_data['user'] = user
+        employee = EmployeeModel.objects.create(**validated_data)
+        return employee
     # def save(self):
     #     emp = User(
     #         email=self.validated_data['Email'], username=self.validated_data['Email'],)

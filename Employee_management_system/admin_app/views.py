@@ -27,16 +27,7 @@ class EmployeeCreate(generics.CreateAPIView, APIView):  # create employee
     queryset = EmployeeModel.objects.all()
     serializer_class = EmployeeCreateSerializer
 
-    # def perform_create(self, serializer):
-    #     validated_data = serializer.validated_data
-    #     username = validated_data.get('Email')
-    #     password = validated_data.get('Password')
-    #     user = User.objects.create_user(username=username, password=password)
-    #     validated_data['user'] = user
-    #     employee = serializer.save(**validated_data)
-    #     return employee
-
-    # permission_classes = [IsAdminUser, IsAuthenticated]
+    # # permission_classes = [IsAdminUser, IsAuthenticated]
 
     # permission_classes = [IsAuthenticated]
     # parser_classes = (MultiPartParser, JSONParser)

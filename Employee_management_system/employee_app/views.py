@@ -3,8 +3,9 @@ from django.shortcuts import render
 from admin_app.models import EmployeeModel, LeaveApplication
 from rest_framework.views import APIView
 from rest_framework.parsers import JSONParser, MultiPartParser
+from rest_framework.permissions import IsAuthenticated
 
-from .serializers import LeaveApplicationSerializer
+from .serializers import LeaveApplicationSerializer, UserSerializer
 
 
 # Create your views here.
@@ -13,6 +14,14 @@ from rest_framework import generics
 from rest_framework.response import Response
 
 from django.shortcuts import get_object_or_404
+
+
+from rest_framework import generics, permissions
+from rest_framework.response import Response
+from rest_framework.authtoken.models import Token
+from django.contrib.auth import authenticate
+
+# create leave
 
 
 class LeaveView(APIView):
@@ -42,16 +51,18 @@ class LeaveView(APIView):
         return Response({'status': 'Leave request created'})
 
 
-class MyLeaveView(generics.RetrieveAPIView):
-    authentication_classes = (TokenAuthentication, )
-    serializer_class = LeaveApplicationSerializer
+# class MyLeaveView(generics.RetrieveAPIView):
+#     authentication_classes = (TokenAuthentication, )
+#     serializer_class = LeaveApplicationSerializer
 
-    def get_object(self):
-        id = self.kwargs['id']
-        return get_object_or_404(LeaveApplication.objects.all(), emp_id=id)
+#     def get_object(self):
+#         id = self.kwargs['id']
+#         return LeaveApplication.objects.filter(emp_id=id)
 
 
+# show leave
 class LeaveDetailList(generics.ListAPIView):
+    permission_classes = (IsAuthenticated,)
     # authentication_classes = (EmployeeAuthentication,)
     lookup_field = 'emp_id'  # details of particular employee
     queryset = LeaveApplication.objects.all()

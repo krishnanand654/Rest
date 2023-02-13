@@ -7,11 +7,11 @@ from django.contrib.auth.models import User
 from rest_framework import serializers
 
 
-class EmployeeSerializer(serializers.ModelSerializer):
+class UserSerializer(serializers.ModelSerializer):
     class Meta:
-        model = EmployeeModel
-        fields = ('Email', 'Password')
-        extra_kwargs = {'Password': {'write_only': True}}
+        model = User
+        fields = ('email', 'password')
+        extra_kwargs = {'password': {'write_only': True}}
 
 
 class LeaveApplicationSerializer(serializers.ModelSerializer):

@@ -4,7 +4,7 @@ from django.contrib.auth.models import User
 
 
 class EmployeeModel(models.Model):
-
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
     Employee_Id = models.AutoField(primary_key=True)
     Employee_Name = models.CharField(max_length=50, null=False)
     Contact_Number = models.IntegerField()
