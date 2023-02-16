@@ -1,4 +1,4 @@
-#Login(Admin)
+# Login(Admin)
 `http://127.0.0.1:8000/api/token/`
 
 {
@@ -10,7 +10,7 @@
 }
 
 
-#create(admin)
+# create(admin)
 
 `http://127.0.0.1:8000/create/`
 
@@ -56,7 +56,7 @@
     
 }
 
-#list all employees(admin)
+# list all employees(admin)
 
 `http://127.0.0.1:8000/employees/`
 
@@ -84,7 +84,7 @@
 ]
 
 
-#Particular employee detail
+# Particular employee detail
 
 `http://127.0.0.1:8000/employee/2`
 
@@ -109,7 +109,7 @@
     "user": 7
 }
 
-#Delete user(admin)
+# Delete user(admin)
 `http://127.0.0.1:8000/employee/delete/2`
 
 
