@@ -4,7 +4,6 @@ from django.contrib.auth.models import User
 
 
 class EmployeeModel(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
     Employee_Id = models.AutoField(primary_key=True)
     Employee_Name = models.CharField(max_length=50, null=False)
     Contact_Number = models.IntegerField()
@@ -19,8 +18,7 @@ class EmployeeModel(models.Model):
     Date_of_Joining = models.DateField(auto_now=True)
     Reporting_to = models.CharField(max_length=250)
     Linked_In = models.URLField(max_length=250)
-    Profile_Picture = models.ImageField(
-        upload_to='media/profile', blank=True, null=True)
+    Profile_Picture = models.ImageField(upload_to='media/profile', blank=True)
     Email = models.EmailField(unique=True, null=False)
     Password = models.CharField(max_length=100)
 
@@ -32,20 +30,13 @@ class EmployeeModel(models.Model):
 
 
 class LeaveApplication(models.Model):
-    STATUS_CHOICES = (
-        ('pending', 'Pending'),
-        ('approved', 'Approved'),
-        ('rejected', 'Rejected'),
-    )
     user = models.ForeignKey(EmployeeModel, on_delete=models.CASCADE)
-    emp_id = models.CharField(max_length=100)
-    emp_name = models.CharField(max_length=100)
     apply_date = models.DateField(
-        auto_now=False, auto_now_add=True, editable=True)
-    nature_of_leave = models.CharField(max_length=100, null=True)
-    first_Day = models.DateField(null=True)
-    last_Day = models.DateField(null=True)
-    number_Of_Days = models.IntegerField(null=True)
+        auto_now=False, auto_now_add=True, editable=False)
+    nature_of_leave = models.CharField(max_length=100)
+    first_Day = models.DateField()
+    last_Day = models.DateField()
+    number_Of_Days = models.IntegerField()
     # pending,approved,rejected,cancelled
-    status = models.CharField(choices=STATUS_CHOICES,
-                              max_length=10, default='pending')
+    status = models.CharField(max_length=12, default='pending')
+    is_approved = models.BooleanField(default=False)
