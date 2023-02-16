@@ -41,7 +41,6 @@ INSTALLED_APPS = [
     'admin_app',
     'rest_framework',
     'employee_app',
-    'rest_framework.authtoken',
 
 ]
 
@@ -50,10 +49,6 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
 
         'rest_framework_simplejwt.authentication.JWTAuthentication',
-        'rest_framework.authentication.TokenAuthentication',
-        'rest_framework.authentication.SessionAuthentication',
-
-
     )
 
 }

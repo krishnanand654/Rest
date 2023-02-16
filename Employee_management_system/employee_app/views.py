@@ -1,41 +1,80 @@
+from rest_framework.decorators import permission_classes, authentication_classes,  renderer_classes
+from django.contrib.auth.models import User
+from rest_framework.decorators import api_view
+# from rest_framework import exceptions
+from rest_framework import authentication
 from rest_framework.authentication import TokenAuthentication
 from django.shortcuts import render
 from admin_app.models import EmployeeModel, LeaveApplication
-from rest_framework.views import APIView
-from rest_framework.parsers import JSONParser, MultiPartParser
+
 from rest_framework.permissions import IsAuthenticated
 
 from .serializers import LeaveApplicationSerializer, UserSerializer
+from rest_framework import status
 
 
 # Create your views here.
-
+from django.core.exceptions import ObjectDoesNotExist
 from rest_framework import generics
 from rest_framework.response import Response
 
 from django.shortcuts import get_object_or_404
-
+from django.core.exceptions import PermissionDenied
 
 from rest_framework import generics, permissions
 from rest_framework.response import Response
 from rest_framework.authtoken.models import Token
 from django.contrib.auth import authenticate
+from rest_framework import authentication
 
-# create leave
 
 
-class LeaveView(APIView):
-    parser_classes = [MultiPartParser]
+
+
+
+class ObtainAuthTokenView(generics.GenericAPIView):
+    authentication_classes = (authentication.TokenAuthentication,)
+    permission_classes = (permissions.AllowAny,)
+    serializer_class = UserSerializer
+
+    def post(self, request, *args, **kwargs):
+        username = request.data.get('username')
+        password = request.data.get('password')
+        user = authenticate(username=username, password=password)
+        if user is not None:
+            token, created = Token.objects.get_or_create(user=user)
+            return Response({'token': token.key})
+        else:
+            return Response({'error': 'Invalid credentials'})
+
+
+class LeaveView(generics.RetrieveUpdateAPIView):
+    authentication_classes = (TokenAuthentication,)
+    permission_classes = (IsAuthenticated,)
+    lookup_field = 'emp_id'  # details of particular employee
+    queryset = LeaveApplication.objects.all()
     serializer_class = LeaveApplicationSerializer
 
-    def post(self, request, user_id):
+    def get(self, request, *args, **kwargs):
+        user = request.user
+        if user.id != self.kwargs.get(self.lookup_field):
+            return Response({"error": "Unauthorized Access"}, status=status.HTTP_401_UNAUTHORIZED)
+        id = self.kwargs.get(self.lookup_field)
+        leave_data = self.queryset.filter(user=id)
+        serializer = LeaveApplicationSerializer(leave_data, many=True)
+        return Response(serializer.data)
 
-        employee = EmployeeModel.objects.get(Employee_Id=user_id)
+    def post(self, request, emp_id):
+        user = request.user
+        if user.id != emp_id:
+            return Response({"error": "Unauthorized Access"}, status=status.HTTP_401_UNAUTHORIZED)
 
-        emp_id = employee.Employee_Id
+        employee = EmployeeModel.objects.get(user=emp_id)
+
+        emp_id = employee.user.id
         emp_name = employee.Employee_Name
-        leave = LeaveApplication.objects.create(
 
+        leave = LeaveApplication.objects.create(
             user=employee,
             emp_id=emp_id,
             emp_name=emp_name,
@@ -44,49 +83,41 @@ class LeaveView(APIView):
             nature_of_leave=request.data.get('nature_of_leave'),
             first_Day=request.data.get('first_Day'),
             last_Day=request.data.get('last_Day'),
-            # number_Of_Days=request.data.get('number_Of_Days'),
-            # pending,approved,rejected,cancelled
+            number_Of_Days=request.data.get('number_Of_Days'),
 
         )
+
         return Response({'status': 'Leave request created'})
 
-
-# class MyLeaveView(generics.RetrieveAPIView):
-#     authentication_classes = (TokenAuthentication, )
-#     serializer_class = LeaveApplicationSerializer
-
-#     def get_object(self):
-#         id = self.kwargs['id']
-#         return LeaveApplication.objects.filter(emp_id=id)
+    def save(self, *args, **kwargs):
+        self.emp_id = str(self.user.id)
+        super().save(*args, **kwargs)
 
 
 # show leave
+
+
 class LeaveDetailList(generics.ListAPIView):
+    authentication_classes = (TokenAuthentication,)
     permission_classes = (IsAuthenticated,)
-    # authentication_classes = (EmployeeAuthentication,)
-    lookup_field = 'emp_id'  # details of particular employee
+    lookup_field = 'emp_id'
     queryset = LeaveApplication.objects.all()
     serializer_class = LeaveApplicationSerializer
 
     def get(self, request, *args, **kwargs):
-        id = self.kwargs.get(self.lookup_field)
-        leave_data = self.queryset.filter(emp_id=id)
-        serializer = LeaveApplicationSerializer(leave_data, many=True)
+        user = request.user
+        emp_id = self.kwargs.get(self.lookup_field)
+        if user.id != emp_id:
+            return Response({"error": "Unauthorized Access"}, status=status.HTTP_401_UNAUTHORIZED)
+
+        leave_data = self.queryset.filter(emp_id=emp_id)
+        serializer = self.serializer_class(leave_data, many=True)
         return Response(serializer.data)
 
 
-# class LeaveAppSort(generics.ListAPIView):
-#     serializer_class = LeaveApplicationSerializer
-
-#     def get_queryset(self):
-#         sort = self.request.query_params.get('sort', 'asc')
-#         if sort == 'asc':
-#             return LeaveApplication.objects.all().order_by('apply_date')
-#         else:
-#             return LeaveApplication.objects.all().order_by('-apply_date')
-
-
 class SortedLeavesView(generics.ListAPIView):
+    authentication_classes = (TokenAuthentication,)
+    permission_classes = (IsAuthenticated,)
     serializer_class = LeaveApplicationSerializer
 
     def get_queryset(self):
@@ -100,13 +131,37 @@ class SortedLeavesView(generics.ListAPIView):
                 emp_id=emp_id).order_by('-first_Day')
         else:
             queryset = LeaveApplication.objects.filter(emp_id=emp_id)
+
+        user = self.request.user
+        if user.id != emp_id:
+            raise PermissionDenied("Unauthorized Access")
+
         return queryset
 
 
 class SearchLeaveView(generics.ListAPIView):
+    authentication_classes = (TokenAuthentication,)
+    permission_classes = (IsAuthenticated,)
     serializer_class = LeaveApplicationSerializer
 
     def get_queryset(self):
-        emp_id = self.kwargs['emp_id']
-        first_Day = self.kwargs['first_Day']
+        emp_id = self.kwargs.get('emp_id')
+        first_Day = self.kwargs.get('first_Day')
+
+        user = self.request.user
+        if user.id != emp_id:
+            raise PermissionDenied("Unauthorized Access")
+
         return LeaveApplication.objects.filter(emp_id=emp_id, first_Day=first_Day)
+
+
+class LogoutUser(generics.CreateAPIView):
+    authentication_classes = (TokenAuthentication,)
+    permission_classes = (IsAuthenticated,)
+
+    def post(self, request, *args, **kwargs):
+        try:
+            request.user.auth_token.delete()
+        except (AttributeError, ObjectDoesNotExist):
+            return Response({"error": "Token not found"}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"message": "Token deleted successfully"}, status=status.HTTP_200_OK)

@@ -23,20 +23,13 @@ class EmployeeCreateSerializer(serializers.ModelSerializer):
         validated_data['user'] = user
         employee = EmployeeModel.objects.create(**validated_data)
         return employee
-    # def save(self):
-    #     emp = User(
-    #         email=self.validated_data['Email'], username=self.validated_data['Email'],)
-    #     Password = self.validated_data['Password']
-    #     emp.set_password(Password)
-    #     emp.save()
-    #     return emp
 
 
 class EmployeeListSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = EmployeeModel
-        fields = ('Employee_Id', 'Employee_Name', 'Contact_Number',
+        fields = ('user', 'Employee_Id', 'Employee_Name', 'Contact_Number',
                   'Email', 'Postion', 'Reporting_to', 'work_Location',)
 
 
@@ -54,8 +47,8 @@ class LeaveListSerializer(serializers.ModelSerializer):
     class Meta:
         model = LeaveApplication
 
-        fields = ('id', 'user', 'emp_name', 'first_Day', 'last_Day',
-                  'apply_date', 'nature_of_leave', 'status')
+        fields = ('emp_id', 'id', 'user', 'emp_name', 'first_Day', 'last_Day',
+                  'apply_date', 'nature_of_leave', 'number_Of_Days', 'status')
 
 
 class LeaveApproveSerializer(serializers.ModelSerializer):
@@ -65,7 +58,7 @@ class LeaveApproveSerializer(serializers.ModelSerializer):
         model = LeaveApplication
 
         fields = ('first_Day', 'last_Day',
-                  'apply_date', 'nature_of_leave', 'status')
+                  'apply_date', 'nature_of_leave', 'number_Of_Days', 'status')
 
 
 class UserSerializer(serializers.ModelSerializer):

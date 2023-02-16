@@ -19,7 +19,8 @@ class EmployeeModel(models.Model):
     Date_of_Joining = models.DateField(auto_now=True)
     Reporting_to = models.CharField(max_length=250)
     Linked_In = models.URLField(max_length=250)
-    Profile_Picture = models.ImageField(upload_to='media/profile', blank=True)
+    Profile_Picture = models.ImageField(
+        upload_to='media/profile', blank=True, null=True)
     Email = models.EmailField(unique=True, null=False)
     Password = models.CharField(max_length=100)
 
@@ -41,10 +42,10 @@ class LeaveApplication(models.Model):
     emp_name = models.CharField(max_length=100)
     apply_date = models.DateField(
         auto_now=False, auto_now_add=True, editable=True)
-    nature_of_leave = models.CharField(max_length=100)
-    first_Day = models.DateField()
-    last_Day = models.DateField()
-    # number_Of_Days = models.IntegerField()
+    nature_of_leave = models.CharField(max_length=100, null=True)
+    first_Day = models.DateField(null=True)
+    last_Day = models.DateField(null=True)
+    number_Of_Days = models.IntegerField(null=True)
     # pending,approved,rejected,cancelled
     status = models.CharField(choices=STATUS_CHOICES,
                               max_length=10, default='pending')
